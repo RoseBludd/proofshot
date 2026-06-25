@@ -30,7 +30,7 @@ src/
 
 - **ESM only** — all imports MUST use `.js` extensions: `import { foo } from '../utils/config.js'`
 - **Build before test** — CLI runs from `dist/`, always `npm run build` after code changes
-- **agent-browser** — external peer dependency (Rust CLI + Node daemon). All browser commands go through `ab()` in `utils/exec.ts` which calls `agent-browser <command>` via `execSync`
+- **agent-browser** — external peer dependency (Rust CLI + Node daemon). All browser commands go through `ab()` in `utils/exec.ts`. On all platforms `ab()` spawns each command inside a Worker thread (`worker_threads`) and uses `Atomics.wait` to block synchronously — this avoids a Windows pipe-inheritance deadlock where the daemon keeps the stdout pipe open after the Rust binary exits, which would cause `execSync` to ETIMEDOUT.
 - **Session state** — `start` writes `.session.json`, `exec` and `stop` read it. `stop` clears it. Don't assume session exists without checking
 - **Session metadata** — `start` writes `metadata.json` inside each session folder with git branch/commit. This persists after `stop` and is used by `pr` to match sessions to branches
 - **Per-session subfolders** — artifacts go in `proofshot-artifacts/YYYY-MM-DD_HH-mm-ss_slug/`
@@ -93,3 +93,5 @@ Edit `src/utils/error-patterns.ts` — add a new entry to the `PATTERNS` array:
 - Video trimming adjusts session-log.json timestamps to match the trimmed video (see `trimOffsetSec` in stop.ts)
 - Server log capture only works when proofshot starts the server itself — if the port is already occupied, we skip spawning and get no server logs
 - The `consoleErrors`/`consoleOutput` from agent-browser are point-in-time snapshots collected at stop time
+- **Windows Worker temp files** — `ab()` writes a `.mjs` worker script and a `.json` result file to `os.tmpdir()` for each call, then deletes them. If a process is killed mid-run these files may linger in `%TEMP%`. They are safe to delete manually.
+- **`proofshot exec screenshot`** saves the image to `~/.agent-browser/tmp/screenshots/` (agent-browser's own temp dir), NOT into the artifact folder. Copy manually if you want screenshots embedded in the artifact alongside the video.

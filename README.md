@@ -69,6 +69,21 @@ proofshot install
 
 The first command installs the CLI and [agent-browser](https://github.com/vercel-labs/agent-browser) (with headless Chromium). The second detects your AI coding tools and installs the ProofShot skill at user level — works across all your projects automatically.
 
+### Windows
+
+ProofShot works natively on Windows. No WSL required.
+
+```powershell
+# Prerequisites (run once)
+winget install OpenJS.NodeJS.LTS   # Node 22+
+npm install -g proofshot
+proofshot install
+```
+
+> **Note for contributors / local builds:** When running ProofShot from a local clone on Windows, always build before testing: `npm run build`. The compiled `dist/` is what the CLI executes.
+
+**How it works on Windows:** agent-browser spawns a persistent Node.js daemon after each command. This daemon normally keeps the stdout pipe open, which would block the caller indefinitely. ProofShot works around this by running each `agent-browser` call inside a Worker thread using Node.js's `worker_threads` module — the Worker listens for the `'exit'` event (fires when the Rust binary exits, ~1–2 s) rather than waiting for all pipe handles to close. `Atomics.wait` blocks the main thread synchronously until the Worker signals. Result: commands return in ~1–2 s instead of hanging until a timeout fires.
+
 ## How It Works
 
 Three-step workflow: **start**, **test**, **stop**.
