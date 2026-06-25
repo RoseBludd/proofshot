@@ -27,7 +27,7 @@ export function openBrowser(
   sessionName?: string,
   browserConfig?: BrowserConfig,
 ): void {
-  ab(buildOpenBrowserCommand(url, headless, browserConfig), { timeoutMs: 60000, session: sessionName });
+  ab(buildOpenBrowserCommand(url, headless, browserConfig), { timeoutMs: 120000, session: sessionName });
   ab(`set viewport ${viewport.width} ${viewport.height}`, { session: sessionName });
 }
 
